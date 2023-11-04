@@ -3,66 +3,46 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Converter from "./components/converter";
 import Navbar from "./components/navbar";
 import List from "./components/list";
+import Footer from "./components/footer";
 
 function App() {
   const [userAmount, setUserAmount] = useState("");
-  const [dropdown, setDropdown] = useState("");
-  const [countries, setCountries] = useState({
-    results: {},
-  });
-  const [loading, setLoading] = useState(true);
+  const [rates, setRates] = useState({});
+
+  const updateUserAmount = (newAmount) => {
+    setUserAmount(newAmount);
+  };
 
   function handleAmountChange(event) {
     const inputAmount = parseFloat(event.target.value);
     setUserAmount(inputAmount);
   }
 
-  function handleDropdownChange(event) {
-    setDropdown(event.target.value);
-  }
-
-  async function fetchCountries() {
+  async function fetchCurrencies() {
     try {
-      console.log("Fetching countries..."); // Log that the function is called
-      const response = await fetch(
-        "https://free.currconv.com/api/v7/countries?apiKey=bf1e1de782ddfef3f7a4"
+      const respone = await fetch(
+        "https://openexchangerates.org/api/latest.json?app_id=b261055f697d4b3dbc3f69d76739660a"
       );
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      if (!respone.ok) {
+        throw new Error(`Error! Status: ${respone.status}`);
       }
 
-      const data = await response.json();
-      console.log("Data received:", data);
+      const data = await respone.json();
+      console.log("Data received in fetchCurrencies", data);
 
-      // Make sure this log statement is executed
-      console.log("Setting countries state...");
-
-      setCountries({ results: data.results });
-      setLoading(false);
+      setRates(data.rates);
     } catch (error) {
-      console.error("Error fetching countries", error);
-      setLoading(false);
+      console.log("Error fetching currencies", error);
+
       throw error;
     }
   }
 
   useEffect(() => {
-    console.log("useEffect in App is running...");
-
-    if (Object.keys(countries.results).length === 0) {
-      console.log("Inside the if block...");
-      fetchCountries()
-        .then((data) => {
-          setCountries({ results: data.results });
-          console.log("Data received in App:", data);
-        })
-        .catch((error) => {
-          console.error("Error in App:", error.message);
-        });
-      console.log("After the fetchCountries function...");
-    }
-  }, [countries]);
-
+    fetchCurrencies().catch((error) => {
+      console.log("Error fetching currencies", error);
+    });
+  }, []);
   return (
     <BrowserRouter>
       <div className="App">
@@ -71,21 +51,37 @@ function App() {
           <Route
             path="/converter"
             element={
-              loading || !countries.results ? (
-                <p>Loading...</p>
-              ) : (
-                <Converter
-                  userAmount={userAmount}
-                  dropdown={dropdown}
-                  handleAmountChange={handleAmountChange}
-                  handleDropdownChange={handleDropdownChange}
-                  data={countries}
-                />
-              )
+              <Converter
+                userAmount={userAmount}
+                handleAmountChange={handleAmountChange}
+                rates={rates}
+                updateUserAmount={updateUserAmount}
+              />
             }
           />
-          <Route path="/list" element={<List />} />
+          <Route
+            path="/list"
+            element={
+              <List
+                rates={rates}
+                userAmount={userAmount}
+                updateUserAmount={updateUserAmount}
+              />
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <Converter
+                userAmount={userAmount}
+                handleAmountChange={handleAmountChange}
+                rates={rates}
+                updateUserAmount={updateUserAmount}
+              />
+            }
+          />
         </Routes>
+        <Footer />
       </div>
     </BrowserRouter>
   );

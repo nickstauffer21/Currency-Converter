@@ -1,21 +1,43 @@
+import { useState } from "react";
+import "./converter.css";
+
 const Converter = (props) => {
-  const {
-    userAmount,
-    handleAmountChange,
-    handleDropdownChange,
-    data,
-    dropdown,
-  } = props;
+  const { userAmount, rates, updateUserAmount } = props;
 
-  const currencyOptions = data?.results
-    ? Object.keys(data.results).map((currencyCode) => (
-        <option key={currencyCode} value={currencyCode}>
-          {data.results[currencyCode].currencyName}
-        </option>
-      ))
-    : null;
+  const [convertedAmount, setConvertedAmount] = useState(null);
+  const [fromCurrency, setFromCurrency] = useState("");
+  const [toCurrency, setToCurrency] = useState("");
 
-  console.log("Data in Converter:", data);
+  const [buttonClicked, setButtonClicked] = useState(false);
+
+  const currencyOptions = Object.keys(rates).map((currency) => (
+    <option key={currency} value={currency}>
+      {currency}
+    </option>
+  ));
+
+  function convertCurrency() {
+    if (fromCurrency && toCurrency) {
+      const exchangeRateFrom = rates[fromCurrency];
+      const exchangeRateTo = rates[toCurrency];
+
+      if (exchangeRateFrom !== undefined && exchangeRateTo !== undefined) {
+        const result = (userAmount * exchangeRateTo) / exchangeRateFrom;
+        const formattedResult = result.toFixed(4);
+        setConvertedAmount(formattedResult);
+        setButtonClicked(true);
+      } else {
+        setConvertedAmount("Invalid");
+      }
+    } else {
+      setConvertedAmount("Select currencies");
+    }
+  }
+
+  function handleInputChange(event) {
+    const inputAmount = parseFloat(event.target.value);
+    updateUserAmount(isNaN(inputAmount) ? "" : inputAmount);
+  }
 
   return (
     <main className="container">
@@ -29,25 +51,38 @@ const Converter = (props) => {
                 type="number"
                 placeholder="Enter Amount"
                 value={userAmount}
-                onChange={handleAmountChange}
+                onChange={handleInputChange}
               ></input>
             </form>
             <h5>From</h5>
             <select
               className="from-dropdown"
-              value={dropdown}
-              onChange={handleDropdownChange}
+              value={fromCurrency}
+              onChange={(event) => setFromCurrency(event.target.value)}
             >
               <option value="">Select a currency</option>
               {currencyOptions}
             </select>
             <h5>To</h5>
-            <select>
+            <select
+              className="to-dropdown"
+              value={toCurrency}
+              onChange={(event) => setToCurrency(event.target.value)}
+            >
               <option value="">Select a currency</option>
               {currencyOptions}
             </select>
             <div className="display-currency"></div>
-            <button className="convert-button btn">Convert</button>
+            <button className="convert-button btn" onClick={convertCurrency}>
+              Convert
+            </button>
+            <div>
+              {buttonClicked && (
+                <p>
+                  Converted Amount: {convertedAmount} {toCurrency}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
